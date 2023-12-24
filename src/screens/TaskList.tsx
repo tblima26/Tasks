@@ -5,6 +5,7 @@ import moment from "moment";
 import 'moment/locale/pt-br'
 import commonStyles from "../commonStyles";
 import Task from "../components/Task";
+import AddTask from "./AddTask";
 
 import TodayImage from "../../assets/imgs/today.jpg"
 import { TouchableOpacity } from "react-native";
@@ -12,6 +13,7 @@ import { TouchableOpacity } from "react-native";
 export default class TaskList extends Component {
     state = {
         showDoneTasks: true,
+        showAddTask: true,
         visibleTasks: [],
         tasks: [{
             id: Math.random(),
@@ -58,6 +60,8 @@ export default class TaskList extends Component {
         const today = moment().locale('pt-br').format('ddd, D [de] MMMM')
         return (
             <View style={styles.container}>
+                <AddTask isVisible={this.state.showAddTask} 
+                    onCancel={()=> this.setState({showAddTask: false})} />
                 <ImageBackground source={TodayImage} style={styles.background}>
                     <View style={styles.iconBar}>
                         <TouchableOpacity onPress={this.toggleFilter}>
