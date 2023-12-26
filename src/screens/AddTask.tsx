@@ -3,7 +3,7 @@ import { Platform, Modal, View, StyleSheet, TouchableWithoutFeedback, Text, Touc
 import commonStyles from "../commonStyles";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import moment from "moment";
-
+import Icon from "react-native-vector-icons/FontAwesome"
 
 
 const initialState = { desc: '', date: new Date(), showDatePicker: false}
@@ -22,7 +22,8 @@ export default class AddTask extends Component {
         const dateString = moment(this.state.date).format('dddd, D [de] MMMM [de] YYYY')
         if (Platform.OS === 'android')
             datePicker = (
-                <View>
+                <View style={styles.dateForm}>
+                    <Icon name="calendar" size={20} color={commonStyles.colors.today} />
                     <TouchableOpacity onPress={() => this.setState({showDatePicker:true})}>
                         <Text style={styles.date}>
                             {dateString}
@@ -101,6 +102,12 @@ const styles = StyleSheet.create({
         fontFamily: commonStyles.fontFamily,
         fontSize: 15,
         marginLeft: 20,
+    },
+    dateForm:{
+        flexDirection:'row',
+        justifyContent: 'center',
+        alignItems: 'center',
+        margin: 5
     }
 
 })
