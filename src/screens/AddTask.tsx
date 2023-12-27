@@ -6,17 +6,27 @@ import moment from "moment";
 import Icon from "react-native-vector-icons/FontAwesome"
 
 
-const initialState = { desc: '', date: new Date(), showDatePicker: false}
+const initialState = { desc: '', date: new Date(), showDatePicker: false }
 
 export default class AddTask extends Component {
     state = {
         ...initialState
     }
 
+    save = () => {
+        const newTask = {
+            desc: this.state.desc,
+            date: this.state.date,
+        }
+
+        this.props.onSave && this.props.onSave(newTask)
+        this.setState({ ...initialState })
+    }
+
     getDatePicker = () => {
         let datePicker =
             <DateTimePicker value={this.state.date}
-                onChange={(_, date) => this.setState({ date, showDatePicker: false})}
+                onChange={(_, date) => this.setState({ date, showDatePicker: false })}
                 mode='date' />
 
         const dateString = moment(this.state.date).format('dddd, D [de] MMMM [de] YYYY')
@@ -24,12 +34,12 @@ export default class AddTask extends Component {
             datePicker = (
                 <View style={styles.dateForm}>
                     <Icon name="calendar" size={20} color={commonStyles.colors.today} />
-                    <TouchableOpacity onPress={() => this.setState({showDatePicker:true})}>
+                    <TouchableOpacity onPress={() => this.setState({ showDatePicker: true })}>
                         <Text style={styles.date}>
                             {dateString}
                         </Text>
                     </TouchableOpacity>
-                {this.state.showDatePicker && datePicker}
+                    {this.state.showDatePicker && datePicker}
                 </View>
             )
         return datePicker
@@ -50,7 +60,9 @@ export default class AddTask extends Component {
                         value={this.state.desc} />
                     {this.getDatePicker()}
                     <View style={styles.buttons}>
-                        <TouchableOpacity ><Text style={styles.button}>Salvar</Text></TouchableOpacity>
+                        <TouchableOpacity onPress={this.save}>
+                            <Text style={styles.button}>Salvar</Text>
+                        </TouchableOpacity>
                         <TouchableOpacity onPress={this.props.onCancel}><Text style={styles.button}>Cancelar</Text></TouchableOpacity>
                     </View>
                 </View>
@@ -103,8 +115,8 @@ const styles = StyleSheet.create({
         fontSize: 15,
         marginLeft: 20,
     },
-    dateForm:{
-        flexDirection:'row',
+    dateForm: {
+        flexDirection: 'row',
         justifyContent: 'center',
         alignItems: 'center',
         margin: 5
