@@ -11,13 +11,16 @@ import Task from "../components/Task";
 import AddTask from "./AddTask";
 import TodayImage from "../../assets/imgs/today.jpg"
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { server, showError } from '../common'
+import axios from "axios";
 
 
-const initialState = { 
+const initialState = {
     showDoneTasks: true,
     showAddTask: false,
     visibleTasks: [],
-    tasks: [] }
+    tasks: []
+}
 
 export default class TaskList extends Component {
     state = {
@@ -26,9 +29,22 @@ export default class TaskList extends Component {
 
     componentDidMount = async () => {
         const stateString = await AsyncStorage.getItem('tasksState')
-        const state = JSON.parse(stateString) || initialState
-        this.setState(state, this.filterTasks)
+        const savedState = JSON.parse(stateString) || initialState
+        this.setState({
+            showDoneTasks: savedState.showDoneTasks
+        }, this.filterTasks)
+
+        this.loadTasks()
         //this.filterTasks()
+    }
+    loadTasks = async () => {
+        try {
+            const maxDate = moment().format('YYYY-MM-DD 23:59:59')
+            const res = await axios.get(`${server}/tasks?date=${maxDate}`)
+            this.setState({ tasks: res.data }, this.filterTasks)
+        } catch (e) {
+            showError(e)
+        }
     }
     toggleFilter = () => {
         this.setState({ showDoneTasks: !this.state.showDoneTasks }, this.filterTasks)
@@ -38,40 +54,54 @@ export default class TaskList extends Component {
         if (this.state.showDoneTasks) {
             visibleTasks = [...this.state.tasks]
         } else {
-            const pending = task => task.done === null
+            const pending = (task: { done: null; }) => task.done === null
             visibleTasks = this.state.tasks.filter(pending)
         }
 
         this.setState({ visibleTasks })
-        AsyncStorage.setItem('tasksState', JSON.stringify(this.state))
+        AsyncStorage.setItem('tasksState', JSON.stringify({
+            showDoneTasks: this.state.showDoneTasks
+        }))
     }
 
-    toggleTask = taskId => {
-        const tasks = [...this.state.tasks]
-        tasks.forEach(task => {
-            if (task.id === taskId) {
-                task.done = task.done ? null : new Date()
-            }
-        })
-        this.setState({ tasks }, this.filterTasks)
+    toggleTask = async (taskId: any) => {
+        try {
+            await axios.put(`${server}/tasks/${taskId}/toggle`)
+            await this.loadTasks()
+        } catch (e) {
+            showError(e)
+            
+        }
     }
 
-    addTask = (newTask) => {
-        if (!newTask.desc || !newTask.desc.trim())
-            return Alert.alert('Dados Invalidos', 'Descrição não informada.')
-        const tasks = [...this.state.tasks]
-        tasks.push({
-            id: Math.random(),
-            desc: newTask.desc,
-            estimate: newTask.date,
-            done: null
-        })
-        this.setState({tasks, showAddTask: false}, this.filterTasks)
+    addTask = async (newTask: { desc: string; date: any; }) => {
+        if (!newTask.desc || !newTask.desc.trim()) {
+            Alert.alert('Dados Invalidos', 'Descrição não informada.')
+            return
+        }
+        try {
+            await axios.post(`${server}/tasks`,{
+                desc: newTask.desc,
+                estimate: newTask.date
+            })
+            this.setState({ showAddTask: false }, this.loadTasks)
+        } catch (e) {
+            showError(e)
+            
+        }
+
     }
 
-    deleteTask = id => {
-        const tasks = this.state.tasks.filter(task => task.id !== id)
-        this.setState({ tasks }, this.filterTasks)
+    deleteTask = async (taskId: any) => {
+        try {
+            await axios.delete(`${server}/tasks/${taskId}`)
+            this.loadTasks()
+        } catch (e) {
+            showError(e)
+        }
+
+        //const tasks = this.state.tasks.filter(task => task.id !== id)
+        //this.setState({ tasks }, this.filterTasks)
     }
 
     render() {
@@ -97,9 +127,9 @@ export default class TaskList extends Component {
                     <FlatList
                         data={this.state.visibleTasks}
                         keyExtractor={item => `${item.id}`}
-                        renderItem={({ item }) => <Task {...item} 
-                        onToggleTask={this.toggleTask} 
-                        onDelete={this.deleteTask}/>}
+                        renderItem={({ item }) => <Task {...item}
+                            onToggleTask={this.toggleTask}
+                            onDelete={this.deleteTask} />}
                     />
 
                 </View>
